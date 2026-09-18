@@ -69,7 +69,10 @@ class SessionStore:
 
 
 def load_store(password):
-    sample = not password
+    # Real-data mode is available when an official data key is configured.
+    # APP_PASSWORD is an optional access-control layer, not the data-mode switch.
+    has_official_key = bool(os.getenv("DART_CRTFC_KEY", "").strip() or os.getenv("DATA_GO_KR_SERVICE_KEY", "").strip())
+    sample = not has_official_key
     if sample or st.session_state.get("practice_mode"):
         current_store = SessionStore()
     else:
