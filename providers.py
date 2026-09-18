@@ -255,7 +255,7 @@ class Official:
     def cached_report(self, code):
         if not re.fullmatch(r"[0-9]{6}", code):
             raise DataError("종목코드를 확인하세요.")
-        response = requests.get("https://raw.githubusercontent.com/planxs-ai/stock-dash/main/public-data/"+code+".json",timeout=(5,15))
+        response = requests.get("https://raw.githubusercontent.com/486garden-max/stock-dash/main/public-data/"+code+".json",timeout=(5,15))
         response.raise_for_status()
         source=response.json()
         if source.get("code")!=code or not source.get("years") or len(source["years"])!=3:
