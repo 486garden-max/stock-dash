@@ -33,6 +33,75 @@ def render_research(store, state, sample_mode):
                             store.save_stock({'code':identity, 'name':name.strip(), 'kind':known.get('kind','관심')})
                             st.rerun()
                         except Exception: st.error('목록 저장에 실패했습니다. 저장 공간 설정을 확인하세요.')
+    # Toss-style home dashboard: asset summary → watchlist → market → holdings → disclosures
+    snapshot = st.session_state.get('account_snapshot') or {}
+    account_value = snapshot.get('value')
+    account_pnl = snapshot.get('pnl')
+    cash = snapshot.get('cash')
+    positions = snapshot.get('positions') or []
+    saved = state.get('stocks', [])
+
+    st.markdown("### 내 자산")
+    asset_cols = st.columns(3)
+    with asset_cols[0]:
+        card("총 평가자산", f"{account_value:,.0f}원" if account_value is not None else "계좌 연결 필요", "국내주식 평가액")
+    with asset_cols[1]:
+        pnl_text = f"{account_pnl:+,.0f}원" if account_pnl is not None else "—"
+        card("평가손익", pnl_text, "조회된 계좌 기준")
+    with asset_cols[2]:
+        card("예수금", f"{cash:,.0f}원" if cash is not None else "—", "계좌 연결 시 표시")
+    if not snapshot:
+        st.caption("계좌를 연결하면 실제 평가자산·손익·예수금을 이곳에서 바로 확인할 수 있습니다.")
+
+    st.markdown("### 관심종목")
+    watch = [s for s in saved if s.get('code') != 'SAMPLE']
+    if watch:
+        watch_cols = st.columns(min(4, max(1, len(watch[:4]))))
+        for col, item in zip(watch_cols, watch[:4]):
+            code = item.get('code','')
+            report = item.get('report') or {}
+            price = report.get('price')
+            with col:
+                card(item.get('name','종목'), f"{price:,.0f}원" if price else "분석 필요", code if code else "종목코드 대기")
+        if len(watch) > 4:
+            st.caption(f"관심종목 {len(watch)}개 · 나머지는 아래 종목 목록에서 확인할 수 있습니다.")
+    else:
+        st.markdown('<div class="planx-empty"><strong style="color:#333b46">관심종목을 추가해보세요</strong><br><span>종목을 추가하면 가격과 분석 상태를 한눈에 볼 수 있습니다.</span></div>', unsafe_allow_html=True)
+
+    st.markdown("### 시장지수")
+    market_cols = st.columns(4)
+    for col, title in zip(market_cols, ["KOSPI", "KOSDAQ", "원/달러", "거래대금"]):
+        with col:
+            card(title, "데이터 연결 필요", "시장 API 연결 후 표시")
+
+    st.markdown("### 보유종목")
+    if positions:
+        hold_cols = st.columns(min(4, len(positions)))
+        for col, p in zip(hold_cols, positions[:4]):
+            with col:
+                pnl = p.get('pnl')
+                value = p.get('value')
+                note = f"손익 {pnl:+,.0f}원" if pnl is not None else f"{p.get('weight',0):.1f}%"
+                card(p.get('name','종목'), f"{value:,.0f}원" if value is not None else "—", note)
+        if len(positions) > 4:
+            st.caption(f"총 {len(positions)}개 보유 · 계좌 연결 화면에서 전체 내역을 확인할 수 있습니다.")
+    else:
+        st.markdown('<div class="planx-empty"><strong style="color:#333b46">보유종목이 없습니다</strong><br><span>계좌를 연결하면 실제 보유종목이 자동으로 표시됩니다.</span></div>', unsafe_allow_html=True)
+
+    st.markdown("### 최근 공시")
+    notices = []
+    for item in saved:
+        for n in (item.get('report') or {}).get('disclosures', []):
+            notices.append({**n, 'stock_name': item.get('name','')})
+    notices.sort(key=lambda x: x.get('date',''), reverse=True)
+    if notices:
+        for n in notices[:5]:
+            st.link_button(f"{n.get('date','')} · {n.get('stock_name','')} · {n.get('title','')}", n.get('url','#'), use_container_width=True)
+    else:
+        st.markdown('<div class="planx-empty"><strong style="color:#333b46">최근 공시가 없습니다</strong><br><span>종목을 분석하면 최신 수집 공시가 이곳에 표시됩니다.</span></div>', unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("### 종목 분석")
     research = published()
     for r in state.get('chat_research', []):
         if r['code'] not in research or r['as_of'] >= research[r['code']]['as_of']: research[r['code']] = r
