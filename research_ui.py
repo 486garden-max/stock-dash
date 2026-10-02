@@ -1,4 +1,5 @@
 import hashlib
+import html
 import json
 from datetime import date
 
@@ -33,7 +34,7 @@ def render_research(store, state, sample_mode):
                             store.save_stock({'code':identity, 'name':name.strip(), 'kind':known.get('kind','관심')})
                             st.rerun()
                         except Exception: st.error('목록 저장에 실패했습니다. 저장 공간 설정을 확인하세요.')
-    # Toss-style home dashboard: asset summary → watchlist → market → holdings → disclosures
+    # Premium home dashboard: asset → chart → watchlist → market → holdings → disclosures
     snapshot = st.session_state.get('account_snapshot') or {}
     account_value = snapshot.get('value')
     account_pnl = snapshot.get('pnl')
@@ -42,51 +43,81 @@ def render_research(store, state, sample_mode):
     saved = state.get('stocks', [])
 
     st.markdown('<div class="planx-dashboard-section"><span class="planx-dashboard-section-title">내 자산</span><span class="planx-dashboard-section-sub">계좌 연결 시 실시간 반영</span></div>', unsafe_allow_html=True)
-    asset_cols = st.columns(3)
-    with asset_cols[0]:
-        card("총 평가자산", f"{account_value:,.0f}원" if account_value is not None else "계좌 연결 필요", "국내주식 평가액")
-    with asset_cols[1]:
-        pnl_text = f"{account_pnl:+,.0f}원" if account_pnl is not None else "—"
-        card("평가손익", pnl_text, "조회된 계좌 기준")
-    with asset_cols[2]:
-        card("예수금", f"{cash:,.0f}원" if cash is not None else "—", "계좌 연결 시 표시")
-    if not snapshot:
-        st.caption("계좌를 연결하면 실제 평가자산·손익·예수금을 이곳에서 바로 확인할 수 있습니다.")
+    value_text = f"{account_value:,.0f}원" if account_value is not None else "계좌 연결 필요"
+    pnl_text = f"{account_pnl:+,.0f}원" if account_pnl is not None else "손익 정보 없음"
+    pnl_class = "color:#ef4444" if account_pnl is not None and account_pnl < 0 else "color:#16a34a"
+    cash_text = f"{cash:,.0f}원" if cash is not None else "—"
+    st.markdown(f'''
+<div class="planx-home-asset">
+  <div><div class="planx-home-asset-label">총 평가자산</div>
+  <div class="planx-home-asset-value">{html.escape(value_text)}</div>
+  <div class="planx-home-asset-change" style="{pnl_class}">평가손익 {html.escape(pnl_text)}</div></div>
+  <div class="planx-home-asset-side">예수금&nbsp;&nbsp; <strong style="color:#333b46">{html.escape(cash_text)}</strong><br>국내주식 평가액 기준</div>
+</div>''', unsafe_allow_html=True)
 
-    st.markdown('<div class="planx-dashboard-section"><span class="planx-dashboard-section-title">관심종목</span><span class="planx-dashboard-section-sub">자주 보는 종목</span></div>', unsafe_allow_html=True)
+    st.markdown('<div class="planx-home-chart"><div class="planx-home-chart-title">자산 추이</div>', unsafe_allow_html=True)
+    asset_history = snapshot.get('history') or snapshot.get('asset_history') or []
+    if asset_history:
+        try:
+            chart_df = pd.DataFrame(asset_history)
+            date_col = next((k for k in ['date','day','at'] if k in chart_df.columns), None)
+            value_col = next((k for k in ['value','asset_value','total_value'] if k in chart_df.columns), None)
+            if date_col and value_col:
+                chart_df[date_col] = pd.to_datetime(chart_df[date_col], errors='coerce')
+                chart_df[value_col] = pd.to_numeric(chart_df[value_col], errors='coerce')
+                chart_df = chart_df.dropna(subset=[date_col, value_col]).sort_values(date_col).set_index(date_col)
+                if not chart_df.empty:
+                    st.line_chart(chart_df[value_col], height=190, use_container_width=True)
+                else:
+                    st.caption('계좌 연결 후 자산 추이 데이터가 표시됩니다.')
+            else:
+                st.caption('계좌 연결 후 자산 추이 데이터가 표시됩니다.')
+        except Exception:
+            st.caption('계좌 연결 후 자산 추이 데이터가 표시됩니다.')
+    else:
+        st.caption('계좌 연결 후 일자별 자산 데이터가 쌓이면 이곳에 추이가 표시됩니다.')
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="planx-dashboard-section"><span class="planx-dashboard-section-title">관심종목</span><span class="planx-dashboard-section-sub">옆으로 넘겨 빠르게 확인</span></div>', unsafe_allow_html=True)
     watch = [s for s in saved if s.get('code') != 'SAMPLE']
     if watch:
-        watch_cols = st.columns(min(4, max(1, len(watch[:4]))))
-        for col, item in zip(watch_cols, watch[:4]):
-            code = item.get('code','')
+        cards = []
+        for item in watch:
+            name = html.escape(item.get('name','종목'))
+            code = html.escape(item.get('code','종목코드 대기'))
             report = item.get('report') or {}
             price = report.get('price')
-            with col:
-                card(item.get('name','종목'), f"{price:,.0f}원" if price else "분석 필요", code if code else "종목코드 대기")
-        if len(watch) > 4:
-            st.caption(f"관심종목 {len(watch)}개 · 나머지는 아래 종목 목록에서 확인할 수 있습니다.")
+            price_text = f"{price:,.0f}원" if price else "분석 필요"
+            cards.append(f'<div class="planx-watch-scroll-card"><div class="planx-watch-name">{name}</div><div class="planx-watch-price">{html.escape(price_text)}</div><div class="planx-watch-meta">{code}</div></div>')
+        st.markdown('<div class="planx-horizontal-scroll">' + ''.join(cards) + '</div>', unsafe_allow_html=True)
     else:
-        st.markdown('<div class="planx-empty"><strong style="color:#333b46">관심종목을 추가해보세요</strong><br><span>종목을 추가하면 가격과 분석 상태를 한눈에 볼 수 있습니다.</span></div>', unsafe_allow_html=True)
+        st.markdown('<div class="planx-empty"><strong style="color:#333b46">관심종목을 추가해보세요</strong><br><span>자주 보는 종목을 추가하면 이곳에서 빠르게 확인할 수 있습니다.</span></div>', unsafe_allow_html=True)
 
     st.markdown('<div class="planx-dashboard-section"><span class="planx-dashboard-section-title">시장지수</span><span class="planx-dashboard-section-sub">주요 시장 흐름</span></div>', unsafe_allow_html=True)
-    market_cols = st.columns(4)
-    for col, title in zip(market_cols, ["KOSPI", "KOSDAQ", "원/달러", "거래대금"]):
-        with col:
-            card(title, "데이터 연결 필요", "시장 API 연결 후 표시")
+    market_html = []
+    for title in ["KOSPI", "KOSDAQ", "원/달러", "거래대금"]:
+        market_html.append(f'<div class="planx-market-card"><div class="planx-market-name">{title}</div><div class="planx-market-value">데이터 연결 필요</div><div class="planx-market-change">시장 API 연결 후 표시</div></div>')
+    st.markdown('<div class="planx-market-row">' + ''.join(market_html) + '</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="planx-dashboard-section"><span class="planx-dashboard-section-title">보유종목</span><span class="planx-dashboard-section-sub">내 계좌 현황</span></div>', unsafe_allow_html=True)
     if positions:
-        hold_cols = st.columns(min(4, len(positions)))
-        for col, p in zip(hold_cols, positions[:4]):
-            with col:
-                pnl = p.get('pnl')
-                value = p.get('value')
-                note = f"손익 {pnl:+,.0f}원" if pnl is not None else f"{p.get('weight',0):.1f}%"
-                card(p.get('name','종목'), f"{value:,.0f}원" if value is not None else "—", note)
-        if len(positions) > 4:
-            st.caption(f"총 {len(positions)}개 보유 · 계좌 연결 화면에서 전체 내역을 확인할 수 있습니다.")
+        rows_html = ['<div class="planx-holdings"><div class="planx-holdings-head"><div>종목</div><div style="text-align:right">평가금액</div><div style="text-align:right">평가손익</div><div style="text-align:right">수익률</div><div style="text-align:right">비중</div></div>']
+        for p in positions:
+            name = html.escape(str(p.get('name','종목')))
+            code = html.escape(str(p.get('code','')))
+            value = p.get('value')
+            pnl = p.get('pnl')
+            ret = p.get('return') if p.get('return') is not None else p.get('profit_rate')
+            weight = p.get('weight')
+            value_text = f"{value:,.0f}원" if value is not None else "—"
+            pnl_text = f"{pnl:+,.0f}원" if pnl is not None else "—"
+            ret_text = f"{ret:+.1f}%" if isinstance(ret,(int,float)) else "—"
+            weight_text = f"{weight:.1f}%" if isinstance(weight,(int,float)) else "—"
+            rows_html.append(f'<div class="planx-holdings-row"><div class="planx-holdings-name">{name}<span class="planx-holdings-code">{code}</span></div><div class="planx-holdings-num">{value_text}</div><div class="planx-holdings-num">{pnl_text}</div><div class="planx-holdings-num">{ret_text}</div><div class="planx-holdings-num">{weight_text}</div></div>')
+        rows_html.append('</div>')
+        st.markdown(''.join(rows_html), unsafe_allow_html=True)
     else:
-        st.markdown('<div class="planx-empty"><strong style="color:#333b46">보유종목이 없습니다</strong><br><span>계좌를 연결하면 실제 보유종목이 자동으로 표시됩니다.</span></div>', unsafe_allow_html=True)
+        st.markdown('<div class="planx-empty"><strong style="color:#333b46">보유종목이 없습니다</strong><br><span>계좌를 연결하면 실제 보유종목이 표 형태로 표시됩니다.</span></div>', unsafe_allow_html=True)
 
     st.markdown('<div class="planx-dashboard-section"><span class="planx-dashboard-section-title">최근 공시</span><span class="planx-dashboard-section-sub">최근 확인된 기업 공시</span></div>', unsafe_allow_html=True)
     notices = []
@@ -95,8 +126,15 @@ def render_research(store, state, sample_mode):
             notices.append({**n, 'stock_name': item.get('name','')})
     notices.sort(key=lambda x: x.get('date',''), reverse=True)
     if notices:
-        for n in notices[:5]:
-            st.link_button(f"{n.get('date','')} · {n.get('stock_name','')} · {n.get('title','')}", n.get('url','#'), use_container_width=True)
+        disclosure_rows = ['<div class="planx-holdings">']
+        for n in notices[:6]:
+            url = html.escape(n.get('url','#'), quote=True)
+            date_text = html.escape(str(n.get('date','')))
+            stock_name = html.escape(str(n.get('stock_name','')))
+            title = html.escape(str(n.get('title','')))
+            disclosure_rows.append(f'<div class="planx-disclosure"><div class="planx-disclosure-date">{date_text}</div><div class="planx-disclosure-stock">{stock_name}</div><div class="planx-disclosure-title"><a href="{url}" target="_blank">{title}</a></div></div>')
+        disclosure_rows.append('</div>')
+        st.markdown(''.join(disclosure_rows), unsafe_allow_html=True)
     else:
         st.markdown('<div class="planx-empty"><strong style="color:#333b46">최근 공시가 없습니다</strong><br><span>종목을 분석하면 최신 수집 공시가 이곳에 표시됩니다.</span></div>', unsafe_allow_html=True)
 
