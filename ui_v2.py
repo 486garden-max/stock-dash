@@ -154,13 +154,50 @@ p,li { line-height:1.6; }
 
 /* Main home: airy, rounded, information-first */
 .planx-hero {
-  background:linear-gradient(180deg,#fff 0%,#fbfcfd 100%);
-  border:1px solid var(--line);
-  border-radius:22px;
-  padding:30px 32px 28px;
-  margin-bottom:16px;
-  box-shadow:0 4px 20px rgba(15,23,42,.035);
+  background:#fff;
+  border:0;
+  border-radius:24px;
+  padding:28px 4px 18px;
+  margin-bottom:12px;
+  box-shadow:none;
 }
+.planx-dashboard-section {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin:28px 2px 12px;
+}
+.planx-dashboard-section-title {
+  font-size:20px;
+  font-weight:800;
+  letter-spacing:-.04em;
+  color:#191f28;
+}
+.planx-dashboard-section-sub {
+  font-size:12px;
+  color:#98a1ab;
+}
+.planx-asset {
+  background:#fff;
+  border:1px solid #e9edf1;
+  border-radius:20px;
+  padding:24px 25px;
+  box-shadow:0 5px 22px rgba(15,23,42,.045);
+}
+.planx-asset-label { color:#8b95a1; font-size:13px; font-weight:650; }
+.planx-asset-value { margin-top:7px; color:#191f28; font-size:32px; font-weight:850; letter-spacing:-.045em; }
+.planx-asset-pnl { margin-top:6px; font-size:14px; font-weight:750; }
+.planx-watch {
+  background:#fff;
+  border:1px solid #e9edf1;
+  border-radius:16px;
+  padding:17px 18px;
+  min-height:92px;
+  box-shadow:0 3px 14px rgba(15,23,42,.03);
+}
+.planx-watch-name { font-size:14px; font-weight:750; color:#191f28; }
+.planx-watch-price { margin-top:9px; font-size:19px; font-weight:820; letter-spacing:-.03em; }
+.planx-watch-meta { margin-top:4px; font-size:11px; color:#98a1ab; }
 .planx-eyebrow {
   color:#2563eb;
   font-size:10px;
@@ -201,6 +238,8 @@ p,li { line-height:1.6; }
 }
 .planx-card-title { font-size:12px; color:#8b95a1; margin-bottom:8px; font-weight:650; }
 .planx-card-value { font-size:24px; color:#191f28; font-weight:820; letter-spacing:-.035em; font-variant-numeric:tabular-nums; }
+.planx-card.compact { min-height:92px; padding:16px 17px; }
+.planx-card.compact .planx-card-value { font-size:20px; }
 .planx-card-note { margin-top:7px; font-size:11px; color:#a0a8b1; }
 
 .planx-empty {
