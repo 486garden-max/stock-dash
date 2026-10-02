@@ -279,6 +279,19 @@ hr { border-color:#eef0f3 !important; }
   .planx-card { min-height:96px; padding:14px; }
   .planx-card-value { font-size:21px; }
 }
+/* Premium dashboard polish */
+.planx-home-asset{background:#fff;border:1px solid #e9edf1;border-radius:24px;padding:28px 30px;margin-bottom:12px;box-shadow:0 8px 28px rgba(15,23,42,.045)}
+.planx-home-asset-value{margin-top:5px;font-size:42px;line-height:1.08;color:#191f28;font-weight:850;letter-spacing:-.055em}
+.planx-home-asset-change{margin-top:8px;font-size:14px;font-weight:760}
+.planx-home-chart{background:#fff;border:1px solid #e9edf1;border-radius:20px;padding:20px 22px 14px;margin-bottom:8px}
+.planx-home-chart-title{font-size:14px;font-weight:750;color:#333b46;margin-bottom:5px}
+.planx-horizontal-scroll{display:flex;gap:10px;overflow-x:auto;padding:2px 1px 8px}
+.planx-watch-scroll-card{flex:0 0 190px;background:#fff;border:1px solid #e9edf1;border-radius:16px;padding:16px 17px;min-height:98px}
+.planx-market-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.planx-market-card{background:#fff;border:1px solid #e9edf1;border-radius:16px;padding:16px 17px;min-height:96px}
+.planx-market-name{color:#8b95a1;font-size:12px;font-weight:650}.planx-market-value{margin-top:7px;font-size:20px;font-weight:820}.planx-market-change{margin-top:5px;font-size:11px;color:#98a1ab}
+.planx-holdings{background:#fff;border:1px solid #e9edf1;border-radius:18px;overflow:hidden}.planx-holdings-head,.planx-holdings-row{display:grid;grid-template-columns:2fr 1.2fr 1.2fr 1.1fr 1fr;gap:12px;align-items:center;padding:14px 18px}.planx-holdings-head{background:#f8f9fa;color:#8b95a1;font-size:11px;font-weight:700}.planx-holdings-row{border-top:1px solid #f0f1f3;font-size:13px}.planx-holdings-name{font-weight:760}.planx-holdings-code{display:block;margin-top:3px;color:#a0a8b1;font-size:10px}.planx-holdings-num{text-align:right;font-variant-numeric:tabular-nums}
+.planx-disclosure{display:flex;align-items:center;gap:14px;padding:15px 2px;border-bottom:1px solid #eef0f3}.planx-disclosure-date{flex:0 0 78px;color:#98a1ab;font-size:11px}.planx-disclosure-stock{flex:0 0 105px;font-size:12px;font-weight:700}.planx-disclosure-title{flex:1;font-size:13px}
 /* Toss-style dashboard polish */
 .stSidebar [data-testid="stSidebarContent"] { padding-left:14px; padding-right:14px; }
 .stMainBlockContainer { gap:1rem; }
