@@ -13,7 +13,7 @@ from chat_research import published, parse_bundle, trends, growth, request_text
 
 def render_research(store, state, sample_mode):
     theme()
-    hero('내 투자의 현재를 한눈에', '관심 있는 기업을 담고, 판단에 필요한 변화만 확인하세요.', 'PLANX · STOCK RESEARCH')
+    hero('내 자산', '관심종목부터 시장 흐름과 최근 공시까지 한 화면에서 확인하세요.', 'STOCKDASH · HOME')
     if sample_mode:
         st.info('둘러보기 중입니다. 개인 목록을 저장하려면 먼저 대시보드 비밀번호를 설정하세요.')
     else:
@@ -41,7 +41,7 @@ def render_research(store, state, sample_mode):
     positions = snapshot.get('positions') or []
     saved = state.get('stocks', [])
 
-    st.markdown("### 내 자산")
+    st.markdown('<div class="planx-dashboard-section"><span class="planx-dashboard-section-title">내 자산</span><span class="planx-dashboard-section-sub">계좌 연결 시 실시간 반영</span></div>', unsafe_allow_html=True)
     asset_cols = st.columns(3)
     with asset_cols[0]:
         card("총 평가자산", f"{account_value:,.0f}원" if account_value is not None else "계좌 연결 필요", "국내주식 평가액")
@@ -53,7 +53,7 @@ def render_research(store, state, sample_mode):
     if not snapshot:
         st.caption("계좌를 연결하면 실제 평가자산·손익·예수금을 이곳에서 바로 확인할 수 있습니다.")
 
-    st.markdown("### 관심종목")
+    st.markdown('<div class="planx-dashboard-section"><span class="planx-dashboard-section-title">관심종목</span><span class="planx-dashboard-section-sub">자주 보는 종목</span></div>', unsafe_allow_html=True)
     watch = [s for s in saved if s.get('code') != 'SAMPLE']
     if watch:
         watch_cols = st.columns(min(4, max(1, len(watch[:4]))))
@@ -68,13 +68,13 @@ def render_research(store, state, sample_mode):
     else:
         st.markdown('<div class="planx-empty"><strong style="color:#333b46">관심종목을 추가해보세요</strong><br><span>종목을 추가하면 가격과 분석 상태를 한눈에 볼 수 있습니다.</span></div>', unsafe_allow_html=True)
 
-    st.markdown("### 시장지수")
+    st.markdown('<div class="planx-dashboard-section"><span class="planx-dashboard-section-title">시장지수</span><span class="planx-dashboard-section-sub">주요 시장 흐름</span></div>', unsafe_allow_html=True)
     market_cols = st.columns(4)
     for col, title in zip(market_cols, ["KOSPI", "KOSDAQ", "원/달러", "거래대금"]):
         with col:
             card(title, "데이터 연결 필요", "시장 API 연결 후 표시")
 
-    st.markdown("### 보유종목")
+    st.markdown('<div class="planx-dashboard-section"><span class="planx-dashboard-section-title">보유종목</span><span class="planx-dashboard-section-sub">내 계좌 현황</span></div>', unsafe_allow_html=True)
     if positions:
         hold_cols = st.columns(min(4, len(positions)))
         for col, p in zip(hold_cols, positions[:4]):
@@ -88,7 +88,7 @@ def render_research(store, state, sample_mode):
     else:
         st.markdown('<div class="planx-empty"><strong style="color:#333b46">보유종목이 없습니다</strong><br><span>계좌를 연결하면 실제 보유종목이 자동으로 표시됩니다.</span></div>', unsafe_allow_html=True)
 
-    st.markdown("### 최근 공시")
+    st.markdown('<div class="planx-dashboard-section"><span class="planx-dashboard-section-title">최근 공시</span><span class="planx-dashboard-section-sub">최근 확인된 기업 공시</span></div>', unsafe_allow_html=True)
     notices = []
     for item in saved:
         for n in (item.get('report') or {}).get('disclosures', []):
